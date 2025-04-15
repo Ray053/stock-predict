@@ -105,53 +105,12 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
   );
 };
 
-async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
-    const apiKey = process.env.NEWS_API_KEY;
-    if (!apiKey) {
-        console.error("NEWS_API_KEY is not set in environment variables.");
-        return [];
-    }
-
-    const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
-
-    try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-            console.error(`Failed to fetch news headlines: ${response.status} ${response.statusText}`);
-            return [];
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'ok' && data.articles) {
-            return data.articles.map((article: any) => ({
-                source: {
-                    id: article.source.id || null,
-                    name: article.source.name || "Unknown",
-                },
-                author: article.author || null,
-                title: article.title || "No Title",
-                description: article.description || "No Description",
-                url: article.url || "#",
-                urlToImage: article.urlToImage || null,
-                publishedAt: article.publishedAt || "Unknown",
-                content: article.content || "No Content",
-            }));
-        } else {
-            console.error("Failed to fetch news headlines:", data.message);
-            return [];
-        }
-    } catch (error: any) {
-        console.error("Error fetching news headlines:", error.message);
-        return [];
-    }
-}
-
 async function getNews(): Promise<NewsHeadline[]> {
   try {
     const res = await fetch('/api/news');
     if (!res.ok) {
-      throw new Error('Failed to fetch news');
+      const errorData = await res.json();
+      throw new Error(errorData?.message || 'Failed to fetch news');
     }
     const data = await res.json();
     return data;
@@ -199,8 +158,8 @@ export default function Home() {
       try {
         const headlines = await getNews();
         setNewsHeadlines(headlines);
-      } catch (error) {
-        console.error("Failed to fetch news headlines:", error);
+      } catch (error: any) {
+        console.error("Failed to fetch news headlines:", error.message);
       } finally {
         setHeadlinesLoading(false);
       }

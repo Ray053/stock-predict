@@ -18,7 +18,7 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
     const apiKey = process.env.NEWS_API_KEY;
     if (!apiKey) {
         console.error("NEWS_API_KEY is not set in environment variables.");
-        return [];
+        throw new Error("NEWS_API_KEY is not set in environment variables.");
     }
 
     const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
@@ -27,7 +27,7 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
         const response = await fetch(apiUrl);
         if (!response.ok) {
             console.error(`Failed to fetch news headlines: ${response.status} ${response.statusText}`);
-            return [];
+            throw new Error(`Failed to fetch news headlines: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -48,16 +48,20 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
             }));
         } else {
             console.error("Failed to fetch news headlines:", data.message);
-            return [];
+            throw new Error(`Failed to fetch news headlines: ${data.message}`);
         }
     } catch (error: any) {
         console.error("Error fetching news headlines:", error.message);
-        return [];
+        throw new Error(`Error fetching news headlines: ${error.message}`);
     }
 }
 
 
 export async function GET() {
-    const newsHeadlines = await fetchStockNewsHeadlines();
-    return NextResponse.json(newsHeadlines);
+    try {
+        const newsHeadlines = await fetchStockNewsHeadlines();
+        return NextResponse.json(newsHeadlines);
+    } catch (error: any) {
+        return NextResponse.json({ message: error.message }, { status: 500 });
+    }
 }
