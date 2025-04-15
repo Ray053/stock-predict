@@ -24,6 +24,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
+import Image from 'next/image';
 
 interface NewsHeadline {
   source: {
@@ -110,7 +111,8 @@ async function getNews(): Promise<NewsHeadline[]> {
     const res = await fetch('/api/news', { cache: 'no-store' });
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(errorData?.message || 'Failed to fetch news');
+      console.error("Error fetching news:", errorData?.message || 'Failed to fetch news');
+      return [];
     }
     const data = await res.json();
     return data;
@@ -125,7 +127,7 @@ export default function Home() {
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
   const [gainersLoading, setGainersLoading] = useState(true);
   const [losersLoading, setLosersLoading] = useState(true);
-  const [marketNews, setMarketNews] = useState("");
+  const [stockSymbol, setStockSymbol] = useState("PLTR");
   const [marketTrendPrediction, setMarketTrendPrediction] = useState<MarketTrendPredictionOutput | null>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [newsHeadlines, setNewsHeadlines] = useState<NewsHeadline[]>([]);
@@ -160,6 +162,7 @@ export default function Home() {
         setNewsHeadlines(headlines);
       } catch (error: any) {
         console.error("Error fetching news:", error.message);
+        setNewsHeadlines([]);
       } finally {
         setHeadlinesLoading(false);
       }
@@ -171,10 +174,11 @@ export default function Home() {
   const handlePredictTrend = async () => {
     setPredictionLoading(true);
     try {
-      const prediction = await predictMarketTrend({ marketNews });
+      const prediction = await predictMarketTrend({ stockSymbol });
       setMarketTrendPrediction(prediction);
     } catch (error) {
       console.error("Failed to predict market trend:", error);
+      setMarketTrendPrediction(null);
     } finally {
       setPredictionLoading(false);
     }
@@ -196,7 +200,7 @@ export default function Home() {
           <Carousel className="w-full">
             <CarouselContent>
               {newsHeadlines
-                .filter(headline => headline && headline.urlToImage) // Filter out null headlines
+                .filter(headline => headline) // Filter out null headlines
                 .map((headline, index) => (
                   headline ? (
                     <CarouselItem key={index} className="pl-1 md:pl-1">
@@ -222,9 +226,9 @@ export default function Home() {
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-2">Market Trend Prediction</h2>
         <Textarea
-          placeholder="Enter recent market news..."
-          value={marketNews}
-          onChange={(e) => setMarketNews(e.target.value)}
+          placeholder="Enter stock symbol (e.g., PLTR)"
+          value={stockSymbol}
+          onChange={(e) => setStockSymbol(e.target.value)}
           className="mb-2"
         />
         <Button onClick={handlePredictTrend} disabled={predictionLoading}>
@@ -237,6 +241,18 @@ export default function Home() {
             "Predict Trend"
           )}
         </Button>
+
+        {predictionLoading && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Loading...</CardTitle>
+              <CardDescription>Fetching prediction</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Please wait...</p>
+            </CardContent>
+          </Card>
+        )}
 
         {marketTrendPrediction && (
           <Card className="mt-4">
@@ -279,4 +295,3 @@ export default function Home() {
     </div>
   );
 }
-
