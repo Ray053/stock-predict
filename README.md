@@ -1,3 +1,4 @@
+
 # StockSage - US Stock Market Trend Prediction and Daily Top Movers
 
 ## Overview
