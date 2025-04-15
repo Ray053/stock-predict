@@ -18,6 +18,20 @@ import { HistoricalDataPoint, getHistoricalData } from "@/services/yfinance";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Icons } from "@/components/icons";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+import { cn } from "@/lib/utils";
+
+interface NewsHeadline {
+  id: string;
+  title: string;
+  url: string;
+}
 
 const LoadingCard = () => (
   <Card className="col-span-3 md:col-span-1 flex flex-col justify-center items-center">
@@ -85,6 +99,19 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
   );
 };
 
+async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
+  // Replace with actual API call to fetch news headlines
+  // For now, return placeholder data
+  return [
+    { id: "1", title: "Dow Jones Rises as Inflation Cools", url: "#" },
+    { id: "2", title: "Tech Stocks Lead Market Rally", url: "#" },
+    { id: "3", title: "Oil Prices Surge on Supply Concerns", url: "#" },
+    { id: "4", title: "Fed Expected to Hold Interest Rates Steady", url: "#" },
+    { id: "5", title: "Retail Sales Show Unexpected Growth", url: "#" },
+  ];
+}
+
+
 export default function Home() {
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
@@ -93,6 +120,9 @@ export default function Home() {
   const [marketNews, setMarketNews] = useState("");
   const [marketTrendPrediction, setMarketTrendPrediction] = useState<MarketTrendPredictionOutput | null>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
+  const [newsHeadlines, setNewsHeadlines] = useState<NewsHeadline[]>([]);
+  const [headlinesLoading, setHeadlinesLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchTopMovers = async () => {
@@ -114,6 +144,22 @@ export default function Home() {
     fetchTopMovers();
   }, []);
 
+  useEffect(() => {
+    const fetchNews = async () => {
+      setHeadlinesLoading(true);
+      try {
+        const headlines = await fetchStockNewsHeadlines();
+        setNewsHeadlines(headlines);
+      } catch (error) {
+        console.error("Failed to fetch news headlines:", error);
+      } finally {
+        setHeadlinesLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, []);
+
   const handlePredictTrend = async () => {
     setPredictionLoading(true);
     try {
@@ -132,6 +178,34 @@ export default function Home() {
         <ModeToggle />
       </div>
       <h1 className="text-3xl font-bold mb-4">StockSage</h1>
+
+       {/* News Headlines Carousel */}
+       <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-2">Daily Market Headlines</h2>
+        {headlinesLoading ? (
+          <Skeleton className="w-full h-12" />
+        ) : (
+          <Carousel className="w-full">
+            <CarouselContent>
+              {newsHeadlines.map((headline) => (
+                <CarouselItem key={headline.id} className="pl-1 md:pl-1">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        <a href={headline.url} target="_blank" rel="noopener noreferrer">
+                          {headline.title}
+                        </a>
+                      </CardTitle>
+                    </CardHeader>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        )}
+      </section>
 
       {/* Market Trend Prediction Section */}
       <section className="mb-8">
