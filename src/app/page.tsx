@@ -26,9 +26,17 @@ import {
 import { cn } from "@/lib/utils";
 
 interface NewsHeadline {
-  id: string;
+  source: {
+    id: string | null;
+    name: string;
+  };
+  author: string | null;
   title: string;
+  description: string;
   url: string;
+  urlToImage: string | null;
+  publishedAt: string;
+  content: string;
 }
 
 const LoadingCard = () => (
@@ -98,15 +106,35 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
 };
 
 async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
-  // Replace with actual API call to fetch news headlines
-  // For now, return placeholder data
-  return [
-    { id: "1", title: "Dow Jones Rises as Inflation Cools", url: "#" },
-    { id: "2", title: "Tech Stocks Lead Market Rally", url: "#" },
-    { id: "3", title: "Oil Prices Surge on Supply Concerns", url: "#" },
-    { id: "4", title: "Fed Expected to Hold Interest Rates Steady", url: "#" },
-    { id: "5", title: "Retail Sales Show Unexpected Growth", url: "#" },
-  ];
+  const apiKey = process.env.NEWS_API_KEY;
+  const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.status === 'ok' && data.articles) {
+      return data.articles.map((article: any) => ({
+        source: {
+          id: article.source.id || null,
+          name: article.source.name || "Unknown",
+        },
+        author: article.author || null,
+        title: article.title || "No Title",
+        description: article.description || "No Description",
+        url: article.url || "#",
+        urlToImage: article.urlToImage || null,
+        publishedAt: article.publishedAt || "Unknown",
+        content: article.content || "No Content",
+      }));
+    } else {
+      console.error("Failed to fetch news headlines:", data.message);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching news headlines:", error);
+    return [];
+  }
 }
 
 
@@ -185,8 +213,8 @@ export default function Home() {
         ) : (
           <Carousel className="w-full">
             <CarouselContent>
-              {newsHeadlines.map((headline) => (
-                <CarouselItem key={headline.id} className="pl-1 md:pl-1">
+              {newsHeadlines.map((headline, index) => (
+                <CarouselItem key={index} className="pl-1 md:pl-1">
                   <Card>
                     <CardHeader>
                       <CardTitle>
@@ -194,6 +222,7 @@ export default function Home() {
                           {headline.title}
                         </a>
                       </CardTitle>
+                      <CardDescription>{headline.source.name}</CardDescription>
                     </CardHeader>
                   </Card>
                 </CarouselItem>
