@@ -197,9 +197,9 @@ export default function Home() {
             <CarouselContent>
               {newsHeadlines.map((headline, index) => (
                 <CarouselItem key={index} className="pl-1 md:pl-1">
-                  <Card>
+                  <Card className="h-full">
                     <CardHeader>
-                      <CardTitle>
+                      <CardTitle className="line-clamp-1">
                         <a href={headline.url} target="_blank" rel="noopener noreferrer">
                           {headline.title}
                         </a>
