@@ -107,7 +107,7 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
 
 async function getNews(): Promise<NewsHeadline[]> {
   try {
-    const res = await fetch('/api/news');
+    const res = await fetch('/api/news', { cache: 'no-store' });
     if (!res.ok) {
       const errorData = await res.json();
       throw new Error(errorData?.message || 'Failed to fetch news');
@@ -195,20 +195,24 @@ export default function Home() {
         ) : (
           <Carousel className="w-full">
             <CarouselContent>
-              {newsHeadlines.map((headline, index) => (
-                <CarouselItem key={index} className="pl-1 md:pl-1">
-                  <Card className="h-full">
-                    <CardHeader>
-                      <CardTitle className="line-clamp-1">
-                        <a href={headline.url} target="_blank" rel="noopener noreferrer">
-                          {headline.title}
-                        </a>
-                      </CardTitle>
-                      <CardDescription>{headline.source.name}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </CarouselItem>
-              ))}
+              {newsHeadlines
+                .filter(headline => headline && headline.urlToImage) // Filter out null headlines
+                .map((headline, index) => (
+                  headline ? (
+                    <CarouselItem key={index} className="pl-1 md:pl-1">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <CardTitle className="line-clamp-1">
+                            <a href={headline.url} target="_blank" rel="noopener noreferrer">
+                              {headline.title}
+                            </a>
+                          </CardTitle>
+                          <CardDescription>{headline.source.name}</CardDescription>
+                        </CardHeader>
+                      </Card>
+                    </CarouselItem>
+                  ) : null
+                ))}
             </CarouselContent>
           </Carousel>
         )}
