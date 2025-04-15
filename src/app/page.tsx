@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface NewsHeadline {
   source: {
@@ -107,19 +108,19 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
   );
 };
 
-async function getNews(): Promise<NewsHeadline[]> {
+async function getNews(): Promise<{ newsHeadlines: NewsHeadline[]; hostnames: string[] }> {
   try {
     const res = await fetch('/api/news', { cache: 'no-store' });
     if (!res.ok) {
       const errorData = await res.json();
       console.error("Error fetching news:", errorData?.message || 'Failed to fetch news');
-      return [];
+      return { newsHeadlines: [], hostnames: [] };
     }
     const data = await res.json();
     return data;
   } catch (error: any) {
     console.error("Error fetching news:", error.message);
-    return [];
+    return { newsHeadlines: [], hostnames: [] };
   }
 }
 
@@ -143,6 +144,7 @@ export default function Home() {
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [newsHeadlines, setNewsHeadlines] = useState<NewsHeadline[]>([]);
   const [headlinesLoading, setHeadlinesLoading] = useState(true);
+  const [hostnames, setHostnames] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -169,11 +171,13 @@ export default function Home() {
     const fetchNews = async () => {
       setHeadlinesLoading(true);
       try {
-        const headlines = await getNews();
+        const { newsHeadlines: headlines, hostnames: fetchedHostnames } = await getNews();
         setNewsHeadlines(headlines);
+        setHostnames(fetchedHostnames);
       } catch (error: any) {
         console.error("Error fetching news:", error.message);
         setNewsHeadlines([]);
+        setHostnames([]);
       } finally {
         setHeadlinesLoading(false);
       }
@@ -202,6 +206,23 @@ export default function Home() {
       </div>
       <h1 className="text-3xl font-bold mb-4">StockSage</h1>
 
+        {hostnames.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTitle>Action Required: Update Next.js Config</AlertTitle>
+          <AlertDescription>
+            The following hostnames need to be added to your <code>next.config.js</code> file under <code>images.remotePatterns</code> to allow image optimization:
+            <ul>
+              {hostnames.map((hostname, index) => (
+                <li key={index}>{hostname}</li>
+              ))}
+            </ul>
+            <p>
+              This is necessary for the <code>next/image</code> component to function correctly.  You will need to manually update the file and restart your Next.js development server.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
        {/* News Headlines Carousel */}
        <section className="mb-8">
         <h2 className="text-xl font-semibold mb-2">Daily Market Headlines</h2>
@@ -224,7 +245,7 @@ export default function Home() {
                           </CardTitle>
                           <CardDescription>{headline.source.name}</CardDescription>
                         </CardHeader>
-                        {headline.urlToImage && (
+                        {/*headline.urlToImage && (
                           <div className="relative w-full h-48">
                             <Image
                               src={headline.urlToImage}
@@ -235,7 +256,7 @@ export default function Home() {
                               className="rounded-md"
                             />
                           </div>
-                        )}
+                        )*/}
                       </Card>
                     </CarouselItem>
                   ) : null

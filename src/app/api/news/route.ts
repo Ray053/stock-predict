@@ -14,7 +14,7 @@ interface NewsHeadline {
     content: string;
 }
 
-async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
+async function fetchStockNewsHeadlines(): Promise<{ articles: NewsHeadline[]; hostnames: string[] }> {
     const apiKey = process.env.NEWS_API_KEY;
     if (!apiKey) {
         console.error("NEWS_API_KEY is not set in environment variables.");
@@ -33,7 +33,7 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
         const data = await response.json();
 
         if (data.status === 'ok' && data.articles) {
-            return data.articles.map((article: any) => ({
+            const articles = data.articles.map((article: any) => ({
                 source: {
                     id: article.source.id || null,
                     name: article.source.name || "Unknown",
@@ -46,6 +46,15 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
                 publishedAt: article.publishedAt || "Unknown",
                 content: article.content || "No Content",
             }));
+
+            // Extract unique hostnames
+            const hostnames = Array.from(new Set(
+                articles
+                    .filter(article => article.urlToImage)
+                    .map(article => new URL(article.urlToImage!).hostname)
+            ));
+
+            return { articles, hostnames };
         } else {
             console.error("Failed to fetch news headlines:", data.message);
             throw new Error(`Failed to fetch news headlines: ${data.message}`);
@@ -59,8 +68,8 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
 
 export async function GET() {
     try {
-        const newsHeadlines = await fetchStockNewsHeadlines();
-        return NextResponse.json(newsHeadlines);
+        const { articles: newsHeadlines, hostnames } = await fetchStockNewsHeadlines();
+        return NextResponse.json({ newsHeadlines, hostnames });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
