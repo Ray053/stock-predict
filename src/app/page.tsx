@@ -6,7 +6,6 @@ import { StockData, getTopGainers, getTopLosers } from "@/services/yfinance";
 import { useEffect, useState } from "react";
 import { MarketTrendPredictionOutput, predictMarketTrend } from "@/ai/flows/market-trend-prediction";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   ChartContainer,
   ChartTooltip,
@@ -25,6 +24,8 @@ import {
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface NewsHeadline {
   source: {
@@ -122,6 +123,16 @@ async function getNews(): Promise<NewsHeadline[]> {
   }
 }
 
+// Define stock options
+const stockOptions = [
+  { value: 'TSLA', label: 'TSLA - Tesla Inc' },
+  { value: 'AAPL', label: 'AAPL - Apple Inc.' },
+  { value: 'MSFT', label: 'MSFT - Microsoft Corp.' },
+  { value: 'GOOGL', label: 'GOOGL - Alphabet Inc.' },
+  { value: 'AMZN', label: 'AMZN - Amazon.com Inc.' },
+  { value: 'PLTR', label: 'PLTR - Palantir Technologies Inc.' },
+];
+
 export default function Home() {
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
   const [topLosers, setTopLosers] = useState<StockData[]>([]);
@@ -213,6 +224,18 @@ export default function Home() {
                           </CardTitle>
                           <CardDescription>{headline.source.name}</CardDescription>
                         </CardHeader>
+                        {headline.urlToImage && (
+                          <div className="relative w-full h-48">
+                            <Image
+                              src={headline.urlToImage}
+                              alt={headline.title}
+                              fill
+                              style={{ objectFit: 'cover' }}
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              className="rounded-md"
+                            />
+                          </div>
+                        )}
                       </Card>
                     </CarouselItem>
                   ) : null
@@ -225,12 +248,18 @@ export default function Home() {
       {/* Market Trend Prediction Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-2">Market Trend Prediction</h2>
-        <Textarea
-          placeholder="Enter stock symbol (e.g., PLTR)"
-          value={stockSymbol}
-          onChange={(e) => setStockSymbol(e.target.value)}
-          className="mb-2"
-        />
+        <Select onValueChange={(value) => setStockSymbol(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a stock" />
+          </SelectTrigger>
+          <SelectContent>
+            {stockOptions.map((stock) => (
+              <SelectItem value={stock.value} key={stock.value}>
+                {stock.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button onClick={handlePredictTrend} disabled={predictionLoading}>
           {predictionLoading ? (
             <>
