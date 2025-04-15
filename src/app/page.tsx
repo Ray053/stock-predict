@@ -110,6 +110,7 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
 async function getNews(): Promise<NewsHeadline[]> {
   try {
     const apiKey = process.env.NEWS_API_KEY;
+
     if (!apiKey) {
       console.error("NEWS_API_KEY is not set in environment variables.");
       return [];
