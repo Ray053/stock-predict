@@ -23,7 +23,6 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
-import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -108,19 +107,45 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
   );
 };
 
-async function getNews(): Promise<{ newsHeadlines: NewsHeadline[]; hostnames: string[] }> {
+async function getNews(): Promise<NewsHeadline[]> {
   try {
-    const res = await fetch('/api/news', { cache: 'no-store' });
+    const apiKey = process.env.NEWS_API_KEY;
+    if (!apiKey) {
+      console.error("NEWS_API_KEY is not set in environment variables.");
+      return [];
+    }
+
+    const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+
     if (!res.ok) {
       const errorData = await res.json();
       console.error("Error fetching news:", errorData?.message || 'Failed to fetch news');
-      return { newsHeadlines: [], hostnames: [] };
+      return [];
     }
     const data = await res.json();
-    return data;
+
+    if (data.status === 'ok' && data.articles) {
+      return data.articles.map((article: any) => ({
+        source: {
+          id: article.source.id || null,
+          name: article.source.name || "Unknown",
+        },
+        author: article.author || null,
+        title: article.title || "No Title",
+        description: article.description || "No Description",
+        url: article.url || "#",
+        urlToImage: article.urlToImage || null,
+        publishedAt: article.publishedAt || "Unknown",
+        content: article.content || "No Content",
+      }));
+    } else {
+      console.error("Failed to fetch news headlines:", data.message);
+      return [];
+    }
   } catch (error: any) {
     console.error("Error fetching news:", error.message);
-    return { newsHeadlines: [], hostnames: [] };
+    return [];
   }
 }
 
@@ -144,7 +169,6 @@ export default function Home() {
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [newsHeadlines, setNewsHeadlines] = useState<NewsHeadline[]>([]);
   const [headlinesLoading, setHeadlinesLoading] = useState(true);
-  const [hostnames, setHostnames] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -171,13 +195,11 @@ export default function Home() {
     const fetchNews = async () => {
       setHeadlinesLoading(true);
       try {
-        const { newsHeadlines: headlines, hostnames: fetchedHostnames } = await getNews();
+        const headlines = await getNews();
         setNewsHeadlines(headlines);
-        setHostnames(fetchedHostnames);
       } catch (error: any) {
         console.error("Error fetching news:", error.message);
         setNewsHeadlines([]);
-        setHostnames([]);
       } finally {
         setHeadlinesLoading(false);
       }
@@ -206,22 +228,6 @@ export default function Home() {
       </div>
       <h1 className="text-3xl font-bold mb-4">StockSage</h1>
 
-        {hostnames.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTitle>Action Required: Update Next.js Config</AlertTitle>
-          <AlertDescription>
-            The following hostnames need to be added to your <code>next.config.js</code> file under <code>images.remotePatterns</code> to allow image optimization:
-            <ul>
-              {hostnames.map((hostname, index) => (
-                <li key={index}>{hostname}</li>
-              ))}
-            </ul>
-            <p>
-              This is necessary for the <code>next/image</code> component to function correctly.  You will need to manually update the file and restart your Next.js development server.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
 
        {/* News Headlines Carousel */}
        <section className="mb-8">
@@ -245,18 +251,6 @@ export default function Home() {
                           </CardTitle>
                           <CardDescription>{headline.source.name}</CardDescription>
                         </CardHeader>
-                        {/*headline.urlToImage && (
-                          <div className="relative w-full h-48">
-                            <Image
-                              src={headline.urlToImage}
-                              alt={headline.title}
-                              fill
-                              style={{ objectFit: 'cover' }}
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="rounded-md"
-                            />
-                          </div>
-                        )*/}
                       </Card>
                     </CarouselItem>
                   ) : null
