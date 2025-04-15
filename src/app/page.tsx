@@ -24,6 +24,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
+import Image from 'next/image';
 
 interface NewsHeadline {
   source: {
@@ -200,7 +201,17 @@ export default function Home() {
                 .map((headline, index) => (
                   headline ? (
                     <CarouselItem key={index} className="pl-1 md:pl-1">
-                      <Card className="h-full">
+                      <Card className="h-full flex flex-col">
+                      {headline.urlToImage && (
+                          <div className="relative w-full h-48">
+                            <Image
+                              src={headline.urlToImage}
+                              alt={headline.title}
+                              layout="fill"
+                              objectFit="cover"
+                            />
+                          </div>
+                        )}
                         <CardHeader>
                           <CardTitle className="line-clamp-1">
                             <a href={headline.url} target="_blank" rel="noopener noreferrer">
