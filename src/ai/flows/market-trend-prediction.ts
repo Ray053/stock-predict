@@ -19,7 +19,7 @@ const MarketTrendPredictionInputSchema = z.object({
 export type MarketTrendPredictionInput = z.infer<typeof MarketTrendPredictionInputSchema>;
 
 const MarketTrendPredictionOutputSchema = z.object({
-  trendPrediction: z.string().describe('A prediction of the US stock market trend (e.g., bullish, bearish, neutral).'),
+  trendPrediction: z.string().describe('A prediction of the stock market trend (e.g., bullish, bearish, neutral).'),
   confidenceLevel: z.number().describe('A confidence level (0-1) indicating the certainty of the prediction.'),
   reasoning: z.string().describe('Explanation of the factors that justify the market trend prediction.'),
 });
@@ -33,7 +33,8 @@ async function getStockData(symbol: string) {
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      console.warn(`API request failed with status ${response.status} for symbol ${symbol}`);
+      return null;
     }
     const data = await response.json();
     if (data && data.length > 0) {
@@ -55,7 +56,8 @@ async function getStockNews(symbol: string) {
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      console.warn(`API request failed with status ${response.status} for news of ${symbol}`);
+      return [];
     }
     const data = await response.json();
     return data.slice(0, 5); // Limit to 5 news articles
