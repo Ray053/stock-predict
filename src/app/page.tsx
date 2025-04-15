@@ -8,27 +8,16 @@ import { MarketTrendPredictionOutput, predictMarketTrend } from "@/ai/flows/mark
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Chart,
-  ChartBar,
-  ChartClose,
   ChartContainer,
-  ChartContent,
-  ChartDescription,
-  ChartFooter,
-  ChartHeader,
-  ChartLabel,
-  ChartLegend,
-  ChartLegendContent,
-  ChartLine,
-  ChartPie,
-  ChartProps,
-  ChartTitle,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import { HistoricalDataPoint, getHistoricalData } from "@/services/yfinance";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Icons } from "@/components/icons";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const LoadingCard = () => (
   <Card className="col-span-3 md:col-span-1 flex flex-col justify-center items-center">
@@ -81,12 +70,15 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
         {loading ? (
           <Skeleton className="w-full h-32" />
         ) : (
-          <ChartContainer config={chartConfig} className="h-32">
-            <ChartLine dataKey="closingPrice" stroke="hsl(var(--chart-1))" strokeWidth={2} />
-            <ChartTooltip>
-              <ChartTooltipContent />
-            </ChartTooltip>
-          </ChartContainer>
+          <ResponsiveContainer width="100%" height={100}>
+          <LineChart data={historicalData}>
+            <Line type="monotone" dataKey="closingPrice" stroke={isGain ? "hsl(var(--chart-1))" : "hsl(var(--destructive))"} strokeWidth={2} dot={false} />
+            <Tooltip />
+            <XAxis dataKey="date"  />
+            <YAxis  />
+            <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+          </LineChart>
+        </ResponsiveContainer>
         )}
       </CardContent>
     </Card>
