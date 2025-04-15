@@ -42,7 +42,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are an AI assistant that predicts the trend of the US stock market based on recent news.
 
-  Analyze the following market news and predict the overall trend of the US stock market. Provide a confidence level (0-1) for your prediction and explain your reasoning.
+  Analyze the following market news and predict the overall trend of the US stock market. Provide a confidence level (0-1) for your prediction and explain your reasoning. Please provide the prediction and reasoning in Traditional Chinese.
 
   Market News:
   {{marketNews}}
