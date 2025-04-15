@@ -24,7 +24,6 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
-import { unstable_cache } from 'next/cache';
 
 interface NewsHeadline {
   source: {
@@ -148,16 +147,19 @@ async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
     }
 }
 
-export const getNewsHeadlines = unstable_cache(
-  async () => {
-    console.log('Fetching News Headlines');
-    return fetchStockNewsHeadlines();
-  },
-  ['news-headlines'],
-  {
-    revalidate: 60,
-  },
-);
+async function getNews(): Promise<NewsHeadline[]> {
+  try {
+    const res = await fetch('/api/news');
+    if (!res.ok) {
+      throw new Error('Failed to fetch news');
+    }
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error fetching news:", error.message);
+    return [];
+  }
+}
 
 export default function Home() {
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
@@ -195,7 +197,7 @@ export default function Home() {
     const fetchNews = async () => {
       setHeadlinesLoading(true);
       try {
-        const headlines = await getNewsHeadlines();
+        const headlines = await getNews();
         setNewsHeadlines(headlines);
       } catch (error) {
         console.error("Failed to fetch news headlines:", error);
