@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils";
+import { unstable_cache } from 'next/cache';
 
 interface NewsHeadline {
   source: {
@@ -106,37 +107,57 @@ const StockCard = ({ stock, isGain }: { stock: StockData; isGain: boolean }) => 
 };
 
 async function fetchStockNewsHeadlines(): Promise<NewsHeadline[]> {
-  const apiKey = process.env.NEWS_API_KEY;
-  const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
-
-  try {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    if (data.status === 'ok' && data.articles) {
-      return data.articles.map((article: any) => ({
-        source: {
-          id: article.source.id || null,
-          name: article.source.name || "Unknown",
-        },
-        author: article.author || null,
-        title: article.title || "No Title",
-        description: article.description || "No Description",
-        url: article.url || "#",
-        urlToImage: article.urlToImage || null,
-        publishedAt: article.publishedAt || "Unknown",
-        content: article.content || "No Content",
-      }));
-    } else {
-      console.error("Failed to fetch news headlines:", data.message);
-      return [];
+    const apiKey = process.env.NEWS_API_KEY;
+    if (!apiKey) {
+        console.error("NEWS_API_KEY is not set in environment variables.");
+        return [];
     }
-  } catch (error) {
-    console.error("Error fetching news headlines:", error);
-    return [];
-  }
+
+    const apiUrl = `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${apiKey}`;
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            console.error(`Failed to fetch news headlines: ${response.status} ${response.statusText}`);
+            return [];
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'ok' && data.articles) {
+            return data.articles.map((article: any) => ({
+                source: {
+                    id: article.source.id || null,
+                    name: article.source.name || "Unknown",
+                },
+                author: article.author || null,
+                title: article.title || "No Title",
+                description: article.description || "No Description",
+                url: article.url || "#",
+                urlToImage: article.urlToImage || null,
+                publishedAt: article.publishedAt || "Unknown",
+                content: article.content || "No Content",
+            }));
+        } else {
+            console.error("Failed to fetch news headlines:", data.message);
+            return [];
+        }
+    } catch (error: any) {
+        console.error("Error fetching news headlines:", error.message);
+        return [];
+    }
 }
 
+export const getNewsHeadlines = unstable_cache(
+  async () => {
+    console.log('Fetching News Headlines');
+    return fetchStockNewsHeadlines();
+  },
+  ['news-headlines'],
+  {
+    revalidate: 60,
+  },
+);
 
 export default function Home() {
   const [topGainers, setTopGainers] = useState<StockData[]>([]);
@@ -174,7 +195,7 @@ export default function Home() {
     const fetchNews = async () => {
       setHeadlinesLoading(true);
       try {
-        const headlines = await fetchStockNewsHeadlines();
+        const headlines = await getNewsHeadlines();
         setNewsHeadlines(headlines);
       } catch (error) {
         console.error("Failed to fetch news headlines:", error);
