@@ -159,7 +159,7 @@ export default function Home() {
         const headlines = await getNews();
         setNewsHeadlines(headlines);
       } catch (error: any) {
-        console.error("Failed to fetch news headlines:", error.message);
+        console.error("Error fetching news:", error.message);
       } finally {
         setHeadlinesLoading(false);
       }
